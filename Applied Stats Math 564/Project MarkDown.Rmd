@@ -1,0 +1,292 @@
+---
+title: "Breast  Cancer Detection Using Classification Models"
+author: "Sumanth Donthula(A20519856) and Ram Vaka (A20481446)"
+date: "2022-12-01"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Project Description:
+
+The project is a classifier problem. The Data set contains the different dependent features to predict the Breast Cancer whether it is Benign or Malignant. The Data set is taken from the study done by University of California at Irvine from there ML Data Set Repository.
+
+Reading the Data File
+
+```{r}
+Data=read.table("data.csv", header = TRUE, sep = ",")
+```
+
+Checking if any null records are present in Data Set
+
+```{r}
+sum(is.na(Data))
+```
+The dataset is almost equally distributed for both Malignant and Benign cases
+
+```{r}
+table(Data$diagnosis)
+```
+
+Displaying the Data Set
+
+```{r}
+head(Data)
+```
+
+Displaying the classifier data with one of the feature. The graph displays radius_mean, a feature from our data set to visualize the classifier problem.
+
+```{r}
+library(ggplot2)
+
+# Scatter plot by group
+ggplot(Data, aes(x = diagnosis, y = radius_mean, color = diagnosis)) +
+geom_point()
+
+```
+
+We can see tha there is a colummn called id in our dataset which we dont require for trainig our model. Droppinf the column id. From the data we can see that the records of dependent variable contains mainly mean, standard error and worst features.
+
+
+Exploratory Data Analysis :
+```{r}
+summary(Data)
+table(Data$diagnosis)
+Data=subset(Data,select=(-1))
+```
+
+Grouping the dependent variables into the groups for easily analyzing them.
+
+```{r}
+meanIdx = grepl('mean', colnames(Data))
+
+seIdx = grepl('se',colnames(Data))
+
+worstIdx= grepl('worst',colnames(Data))
+```
+
+Plotting the Histograms and observing the distribution for mean group data. We can see that some of the features like symmetric mean, smoothness mean, texture mean are uniform. Othere features a little skewed distributions.
+
+```{r}
+meanData=Data[meanIdx]
+
+par(mfrow=c(3,5))
+
+for(i in 1:ncol(meanData)) {       # for-loop over columns
+  set.seed(seed = 49078)
+  x <-  meanData[ , i]
+  hist(main="Histogram", ylab="Distribution",xlab=colnames(meanData)[i],x = x, freq = FALSE)
+  lines(x = density(x = x), col = "blue")
+}
+```
+Plotting the Histograms and observing the distribution for standard error group data. Almost all the distributions of this group is appearing skewed.
+
+```{r}
+seData=Data[seIdx]
+
+par(mfrow=c(3,5))
+for(i in 1:ncol(seData)) {       # for-loop over columns
+  set.seed(seed = 49078)
+  x <-  seData[ , i]
+  hist(main="Histogram", ylab="Distribution",xlab=colnames(seData)[i],x = x, freq = FALSE)
+  lines(x = density(x = x), col = "blue")
+}
+```
+
+Plotting the Histograms and observing the distribution for worst group data. Almost all the distributions of this group is appearing skewed.
+
+```{r}
+worstData=Data[worstIdx]
+
+par(mfrow=c(3,5))
+for(i in 1:ncol(worstData)) {       # for-loop over columns
+  set.seed(seed = 49078)
+  x <-  worstData[ , i]
+  hist(main="Histogram", ylab="Distribution",xlab=colnames(worstData)[i],x = x, freq = FALSE)
+  lines(x = density(x = x), col = "blue")
+}
+```
+
+Plotting boxplots to see the outliers in mean data. Most of the dependent variables has outliers.
+
+```{r}
+par(mfrow=c(3,5))
+
+for(i in 1:ncol(meanData)) {       # for-loop over columns
+  set.seed(seed = 49078)
+  x <-  meanData[ , i]
+  boxplot(xlab=colnames(meanData)[i],x = x, freq = FALSE)
+}
+```
+
+Plotting boxplots to see the outliers in se data. Most of the dependent variables has outliers.
+
+```{r}
+par(mfrow=c(3,5))
+
+for(i in 1:ncol(seData)) {       # for-loop over columns
+  set.seed(seed = 49078)
+  x <-  seData[ , i]
+  boxplot(xlab=colnames(seData)[i],x = x, freq = FALSE)
+}
+```
+Plotting boxplots to see the outliers in worst data. Most of the dependent variables has outliers.
+
+```{r}
+par(mfrow=c(3,5))
+for(i in 1:ncol(worstData)) {       # for-loop over columns
+  set.seed(seed = 49078)
+  x <-  worstData[ , i]
+  boxplot(xlab=colnames(worstData)[i],x = x, freq = FALSE)
+}
+```
+Checking the correlation of data set with the Dependent variable diagnosis we can see only few columns are correlated with diagnosis. We will use this columns to build our model in classification.
+
+```{r}
+Data$diagnosis <- ifelse(Data$diagnosis=='M', 1, 0)
+library(reshape2)
+
+df=abs(cor(Data[-1:-2],Data[2]))>0.7
+df=melt(df)
+df[df$value==TRUE,-2]
+
+df$var2==TRUE
+
+```
+
+Dividing and splitting the data into train and test data sets
+
+```{r}
+#+ perimeter_mean+ area_worst+ radius_mean
+library(caTools)
+# Splitting dataset
+split <- sample.split(Data, SplitRatio = 0.8)
+split
+
+train_reg <- subset(Data, split == "TRUE")
+test_reg <- subset(Data, split == "FALSE")
+```
+Implementing SVM Classifier
+
+```{r}
+
+library(e1071)
+
+classifier = svm(diagnosis~concave.points_worst+ perimeter_worst+ concave.points_mean+ radius_worst+ area_mean+ perimeter_mean+ area_worst+ radius_mean,data = train_reg,type = 'C-classification',kernel = 'linear')
+
+Y_predicion = predict(classifier, newdata = test_reg)
+
+
+ConMat=table(test_reg$diagnosis, Y_predicion)
+print("confusionMatrix")
+ConMat
+
+missing_classerr <- mean(Y_predicion != test_reg$diagnosis)
+print(paste('Accuracy =', 1-missing_classerr))
+
+
+plot(classifier, train_reg,area_worst~radius_worst)
+
+
+```
+Implementing KNN Classifier
+```{r}
+library(class)
+
+knnModel=knn(train=train_reg, test=test_reg, cl=train_reg$diagnosis, k=21)
+
+
+
+# Notice that I am only getting 2 dimensions 
+
+  
+  
+ plot_predictions=data.frame(test_reg$diagnosis
+,test_reg$concave.points_worst
+,test_reg$perimeter_worst 
+,test_reg$concave.points_mean 
+,test_reg$radius_worst 
+,test_reg$area_mean 
+,test_reg$perimeter_mean 
+,test_reg$area_worst 
+,test_reg$radius_mean,predicted=knnModel)
+
+colnames(plot_predictions) <- c("diagnosis",
+                                "concave.points_worst",
+                                "perimeter_worst",
+                                "concave.points_mean",
+								"radius_worst",
+								"area_mean",
+								"perimeter_mean",
+								"area_worst",
+								"radius_mean",
+                                'predicted')
+# Visualize the KNN algorithm results.
+library(ggplot2)
+
+ggplot(plot_predictions, aes(area_mean, radius_mean, color = predicted, fill = predicted)) + 
+  geom_point(size = 5) + 
+  geom_text(aes(label=diagnosis),hjust=1, vjust=2) +
+  ggtitle("Knn Visualization") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.position = "none")
+
+confMatrix=table(test_reg$diagnosis, knnModel)
+print("confusionMatrix")
+confMatrix
+missing_classerr <- mean(test_reg$diagnosis != knnModel)
+print(paste('Accuracy =', 1-missing_classerr))
+
+
+```
+
+
+Implementing logistic regression
+```{r}
+# Training model
+logistic_model <- glm(diagnosis~concave.points_worst+ perimeter_worst+ concave.points_mean
+                      + radius_worst+ area_mean+ perimeter_mean+ area_worst+ radius_mean
+                      ,family=binomial("logit"),data = train_reg)
+
+
+predictData=predict(logistic_model,data.frame(concave.points_worst=test_reg$concave.points_worst,perimeter_worst=test_reg$perimeter_worst,concave.points_mean=test_reg$concave.points_mean,radius_worst=test_reg$radius_worst,perimeter_mean=test_reg$perimeter_mean,area_worst=test_reg$area_worst,radius_mean=test_reg$radius_mean,area_mean=test_reg$area_mean),type="response")
+
+library(InformationValue)
+
+origTest=test_reg$diagnosis
+
+#find optimal cutoff probability to use to maximize accuracy
+optimal <- optimalCutoff(test_reg, predictData)[1]
+optimal
+
+predictDif <- ifelse(predictData>optimal, 0, 1)
+
+library(ggplot2)
+ 
+ 
+
+
+
+print("confusionMatrix")
+table(origTest, predictDif)
+
+missing_classerr <- mean(predictDif != origTest)
+print(paste('Accuracy =', 1 - missing_classerr))
+
+
+
+ggplot(Data, aes(x=radius_mean, y=diagnosis)) + geom_point() +
+
+      stat_smooth(method="glm", color="red", se=FALSE, 
+
+                method.args = list(family=binomial))
+
+
+```
+
+
+

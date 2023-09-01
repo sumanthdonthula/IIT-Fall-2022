@@ -1,0 +1,701 @@
+---
+title: "Assignment 03 Stats"
+author: "Sumanth Donthula"
+date: "2022-10-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Problem 1
+
+1.a)
+
+Yes, a linear relation is being observed in the data by scatter plot.
+
+```{r}
+Data=read.table("AS3Q1Data.txt", header = FALSE, sep = "") 
+Y = Data$V1
+X = Data$V2
+
+plot(X,Y,xlab="Sales",ylab="Sales Year")
+
+lm1=lm(Y~X)
+lm1
+
+```
+
+1.b)
+
+By looking at the box cox plot a lambda of 0.5 is suggested. By SSE box cox plot it is evident that SSE is miniumum at lambda=0.5.
+
+```{r}
+
+resid(lm1)
+
+library(MASS)
+boxcox(Y~X)
+
+boxcox(Y~X,seq(0,1,0.01))
+
+library('ALSM')
+boxcox.sse(X,Y)
+
+
+```
+
+1.c)
+
+The linear relation function is : 10.26093+1.076X 
+
+```{r}
+Yroot=Y^0.5
+lm2=lm(Yroot~X)
+lm2
+```
+
+1.d)
+
+Yes, the linear regression seems a good fit on the transformed data.
+
+```{r}
+plot(X,Yroot)+abline(10.261,1.076,col=3)
+
+
+
+```
+
+1.e)
+Sum of residuals by looking at the residual plot is almost 0 which supports this
+transformation 
+
+From Qq plot, qq line does not line up perfectly but it appears to be in linear
+relation. So we conclude that residuals are normally distributed.
+
+
+```{r}
+residual=lm2$residuals
+residual
+
+predictors=lm2$fitted.values
+plot(predictors,residual)
+plot(lm2,which=c(1,2))
+```
+
+1.f)
+
+The estimated function in original units is:
+
+Ybar=(10.261+1.076X)2
+
+Problem 2:
+
+2.a)
+
+The confidence intervals are
+
+CI45 : 98.6309, 106.9691
+CI55 : 88.11124, 93.68876
+CI65 : 76.20837, 81.79163
+
+```{r}
+Data2=read.table("AS32Data.txt", header = FALSE, sep = "") 
+Y = Data2$V1
+X = Data2$V2
+n=length(X)
+Xf =cbind(rep(1,n),X)
+
+
+Ymat=as.matrix(Y)
+Xmat=as.matrix(Xf)
+
+
+lm=lm(Y~X)
+lm
+anova(lm)
+
+summary(lm)
+
+sse = sum((fitted(lm) - Y)^2)
+
+Sigmasquare=sse/n-2
+
+#Working hotelling method
+X1h=c(1,45)
+X2h=c(1,55)
+X3h=c(1,65)
+
+Yhat1=156.35-1.19*45
+Yhat2=156.35-1.19*55
+Yhat3=156.35-1.19*65
+
+measure1=(Sigmasquare*t(X1h)%*%solve(t(Xmat)%*%Xmat)%*%X1h)^0.5
+
+measure2=(Sigmasquare*t(X2h)%*%solve(t(Xmat)%*%Xmat)%*%X2h)^0.5
+
+measure3=(Sigmasquare*t(X3h)%*%solve(t(Xmat)%*%Xmat)%*%X3h)^0.5
+
+W = sqrt(2 * qf(p = 0.95, df1 = 2, df2 = n - 2))
+W
+
+conf1up=Yhat1+W*measure1 
+conf1lo=Yhat1-W*measure1  
+conf2up=Yhat2+W*measure2 
+conf2lo=Yhat2-W*measure2  
+conf3up=Yhat3+W*measure3  
+conf3lo=Yhat3-W*measure3  
+
+conf45=cbind(conf1lo,conf1up)
+conf45
+conf55=cbind(conf2lo,conf2up)
+conf55
+conf65=cbind(conf3lo,conf3up)
+conf65
+
+```
+2.b)
+NO the working hotel model is not the most efficient one as its range is wider compared to normal t distributions confidence interval. 
+
+For example here t is 1.67 where as w is 2.51 the band will be larger.
+```{r}
+t = qt(0.95,nrow(Data2) - 2)
+t
+```
+
+2.c)
+
+The confidence intervals are
+
+CI48 : 95.62575, 102.8342
+CI59 : 83.61339, 88.66661
+CI74 : 64.3607, 72.2193
+
+
+```{r}
+
+BX1h=c(1,48)
+BX2h=c(1,59)
+BX3h=c(1,74)
+
+Yhat11=156.35-1.19*48
+Yhat21=156.35-1.19*59
+Yhat31=156.35-1.19*74
+
+
+Bmeasure1=(Sigmasquare*t(BX1h)%*%solve(t(Xmat)%*%Xmat)%*%BX1h)^0.5
+
+Bmeasure2=(Sigmasquare*t(BX2h)%*%solve(t(Xmat)%*%Xmat)%*%BX2h)^0.5
+
+Bmeasure3=(Sigmasquare*t(BX3h)%*%solve(t(Xmat)%*%Xmat)%*%BX3h)^0.5
+
+B = qt(1-0.05/(2 * 3), n - 2)
+
+conf11up=Yhat11+B*Bmeasure1
+conf11lo=Yhat11-B*Bmeasure1  
+conf22up=Yhat21+B*Bmeasure2 
+conf22lo=Yhat21-B*Bmeasure2  
+conf33up=Yhat31+B*Bmeasure3  
+conf33lo=Yhat31-B*Bmeasure3
+conf48=cbind(conf11lo,conf11up)
+conf48
+conf59=cbind(conf22lo,conf22up)
+conf59
+conf74=cbind(conf33lo,conf33up)
+conf74
+
+```
+Problem 3
+
+3.a)
+
+The observations from plots provided that there are no outliers and the distribution of each variable is normal.
+
+Correlation matrix shows Y and X1 have significant positive correlation, Y and X2 are positively correlated, but less than Y and X1 and there’s no correlation between X1 and X2.
+
+```{r}
+Data3=read.table("AS33Data.txt", header = FALSE, sep = "") 
+Y = Data3$V1
+X1= Data3$V2
+X2=Data3$V3
+
+
+pairs(~Y+X1+X2)
+colnames(Data3)=c("Y","X1","X2")
+cor(Data3)
+
+```
+
+3.b)The regression model is Y= 37.65 + 4.425X1 + 4.375X2. Holding the other variable constant, Increasing one unit of X1 leads to an increase in the brand liking by 4.425, and holding X1 constant, an one unit increase in X2 leads to an increase of the brand by 4.375.
+
+```{r}
+Lmodel=lm(Y~X1+X2)
+summary(Lmodel)
+#Y=37.65+4.25X1+4.375X2
+
+
+```
+3.c)
+
+There are no outliers in the residuals and errors are normally distributed.
+
+```{r}
+Lmodel$residual
+
+boxplot(Lmodel$residual)
+
+
+```
+
+3.d)
+
+Based on the plots, we observe that residuals are random and almost normally distributed with mean 0.
+
+```{r}
+Yhat=37.65+4.25*X1+4.375*X2
+
+plot(Yhat,Lmodel$residual)
+plot(X1,Lmodel$residual)
+plot(X2,Lmodel$residual)
+plot(X1*X2,Lmodel$residual)
+
+qqnorm(Lmodel$residual)
+qqline(Lmodel$residual)
+
+
+```
+3.e)
+
+Ho: Error variance is constant
+Ha: Error variance is not constant
+
+The p value of the Breusch Pagan test is 0.3599 which is greater than alpha 0.05 so we reject the null hypothesis.
+
+```{r}
+library(lmtest)
+Lmodel2=lm(log((Lmodel$residuals)^2)~X1+X2)
+bptest(Lmodel2)
+
+```
+3.f)
+
+Ho: Linear Model fits the Data(Y=b0+b1X1+b2X2)
+Ha: There is lack of fit in the model(Y<>b0+b1X1+b2X2)
+
+Since the P test value of X1 and X2 are greater than 0.01,so we reject the null hypothesis.
+
+```{r}
+#Lmodel=lm(Y~X1+X2)
+
+anova(Lmodel2,Lmodel)
+```
+Problem 4
+
+4.a)
+
+Stem and leaf represents the histograms of quantitative data.
+
+```{r}
+Data4=read.table("As34Data.txt", header = FALSE, sep = "") 
+Y = Data4$V1
+X1 = Data4$V2
+X2 = Data4$V3
+X3 = Data4$V4
+X4 = Data4$V5
+ 
+Xmat=as.matrix(cbind(rep(1,length(Y)),X1,X2,X3,X4))
+stem(X1)
+stem(X2)
+stem(X3)
+stem(X4)
+```
+4.b)
+
+From observing the correlation matrix we can see that there is no strong correlation between the predictor and response variables. 
+
+```{r}
+pairs(~Y+X1+X2+X3+X4)
+colnames(Data4)=c("Y","X1","X2","X3","X4")
+cor(Data4)
+
+```
+4.c)
+
+The regression model is  Y=12.22-0.14*X1+0.28*X2+0.61*X3+7.92e-06*X4
+
+```{r}
+Lmod=lm(Y~X1+X2+X3+X4)
+Lmod
+```
+4.d)
+
+There are some outliers in the data and the plot is noy symmetrical and the assumption made on noise of regression is wrong.
+
+```{r}
+
+Lmod$residuals
+
+boxplot(Lmod$residuals)
+```
+4.e)
+
+Based on the residual plots we find that residuals are not uniform with mean 0.
+
+```{r}
+par(mfrow=c(2,3))
+plot(Lmod$fitted.values,Lmod$residual)
+plot(X1,Lmod$residual)
+plot(X2,Lmod$residual)
+plot(X3,Lmod$residual)
+plot(X4,Lmod$residual)
+
+plot(X1,Lmod$residual)
+plot(X2,Lmod$residual)
+plot(X3,Lmod$residual)
+plot(X1*X2,Lmod$residual)
+plot(X2*X3,Lmod$residual)
+plot(X3*X1,Lmod$residual)
+
+plot(Lmod,which=2)
+```
+
+4.f)
+
+From anova of Lmod we find that p value of coeficienr of X3 is less than 0.05 which implies X3 does not fit the model and X3=0.
+
+The model can be Y~X1+X2+X4
+
+```{r}
+anova(Lmod)#Y~X1+X2+X3+X4
+Lmod2=lm(Y~X1+X2+X4)
+
+anova(Lmod2,Lmod)
+
+```
+4.g)
+
+H0: Error variance is constant
+Ha: Error variance is not constant
+
+tstar>t so we reject null hypothesis. so the assumption error variance is constant is true.
+
+```{r}
+Yhat=sort(fitted(Lmod2))
+
+Y1=Yhat[1:40]
+Y2=Yhat[41:81]
+
+e1=Y1-Y[1:40]
+Med1=median(e1)
+
+e2=Y2-Y[41:81]
+Med2=median(e2)
+
+n1=length(Y1)
+n2=length(Y2)
+
+
+d1=e1-Med1
+Mean1=mean(d1)
+d2=e2-Med2
+Mean2=mean(d2)
+
+s=sqrt(sum((d1-Mean1)^2)+sum((d2-Mean2)^2)/(length(Yhat)-2))
+
+tstar=(Mean1-Mean2)/(s*sqrt((1/n1)+(1/n2)))
+tstar
+t=qt(0.05,df=n1+n2-2)
+t
+
+```
+Problem 5
+
+5.a)
+
+H0: b1=b2=b3=b4=0 (all the coeficients are 0)
+Ha: At least one of the coef is not 0
+
+Since the p value of beta tests for X1, X2 , X3 and X4 are less than 0.05 we reject null hypothesis.
+
+```{r}
+#Q5
+anova(Lmod)
+```
+5.b)
+
+The confidence intervals of betas are :
+
+Beta1: (-0.19663959, -0.08742769)
+Beta2: (0.1203875, 0.4436456)
+Beta3: (-2.161312,  3.399999)
+Beta4: (4.381297e-06, 1.146731e-05)
+
+```{r}
+n=length(Y)
+alpha=1 - 0.95
+g=4
+t=qt(1 - alpha/(2 * g), n - 4 - 1)
+t
+beta1 = coef(summary(Lmod))[,1][[2]]
+beta2 = coef(summary(Lmod))[,1][[3]]
+beta3 = coef(summary(Lmod))[,1][[4]]
+beta4 = coef(summary(Lmod))[,1][[5]]
+
+sebeta1 = coef(summary(Lmod))[,2][[2]]
+sebeta2 = coef(summary(Lmod))[,2][[3]]
+sebeta3 = coef(summary(Lmod))[,2][[4]]
+sebeta4 = coef(summary(Lmod))[,2][[5]]
+
+
+CIbeta1 = c(beta1 - t * sebeta1, beta1 + t * sebeta1)
+CIbeta2 = c(beta2 - t * sebeta2, beta2 + t * sebeta2)
+CIbeta3 = c(beta3 - t * sebeta3, beta3 + t * sebeta3)
+CIbeta4 = c(beta4 - t * sebeta4, beta4 + t * sebeta4)
+
+
+CIbeta1
+CIbeta2
+CIbeta3
+CIbeta4
+```
+5.c)
+
+The value of Rsquare is 0.58 the variation of model explains 58% variation in Y wrt X.
+
+```{r}
+sse = sum((fitted(Lmod) - Y)^2)
+
+sst=sum((Y-mean(Y))^2)
+
+Rsquare=1-(sse/sst)
+Rsquare
+```
+Problem 6
+
+The family of estimates of coeficients is
+
+
+
+```{r}
+#Q6
+
+Data42=read.table("As36.txt", header = FALSE, sep = "") 
+n=nrow(Data42)
+Xh1=t(cbind(rep(1,n),t(Data42$V1)))
+Xh2=t(cbind(rep(1,n),t(Data42$V2)))
+Xh3=t(cbind(rep(1,n),t(Data42$V3)))
+Xh4=t(cbind(rep(1,n),t(Data42$V4)))
+beta0=coef(summary(Lmod))[,1][[2]]
+
+Bmat=cbind(beta0,beta1,beta2,beta3,beta4)
+Bmat=as.matrix(Bmat)
+
+Yhat1=Bmat%*%Xh1;
+Yhat2=Bmat%*%Xh2;
+Yhat3=Bmat%*%Xh3;
+Yhat4=Bmat%*%Xh4;
+
+sse = sum((fitted(Lmod) - Y)^2)
+
+Sigmasquare=sse/n-2
+
+measure1=(Sigmasquare*t(Xh1)%*%solve(t(Xmat)%*%Xmat)%*%Xh1)^0.5
+
+measure2=(Sigmasquare*t(Xh2)%*%solve(t(Xmat)%*%Xmat)%*%Xh2)^0.5
+
+measure3=(Sigmasquare*t(Xh3)%*%solve(t(Xmat)%*%Xmat)%*%Xh3)^0.5
+
+measure4=(Sigmasquare*t(Xh4)%*%solve(t(Xmat)%*%Xmat)%*%Xh4)^0.5
+
+W = sqrt(2 * qf(p = 0.95, df1 = 5, df2 = length(Y) - 5))
+
+
+conf1up=Yhat1+W*measure1 
+conf1lo=Yhat1-W*measure1  
+conf2up=Yhat2+W*measure2 
+conf2lo=Yhat2-W*measure2  
+conf3up=Yhat3+W*measure3  
+conf3lo=Yhat3-W*measure3  
+conf4lo=Yhat3+W*measure3
+conf4up=Yhat3-W*measure3
+c(conf1up,conf1lo)
+c(conf2up,conf2lo)
+c(conf3up,conf3lo)
+c(conf4up,conf4lo)
+```
+
+Problem 7
+
+7.a)
+
+Transforming the data and fitting the model
+
+```{r}
+Ycor  = sqrt(1/(length(Y)-1))*((Y-mean(Y))/sd(Y))
+X1cor = sqrt(1/(length(X1)-1))*((X1-mean(X1))/sd(X1))
+X2cor = sqrt(1/(length(X2)-1))*((X2-mean(X2))/sd(X2))
+X3cor = sqrt(1/(length(X3)-1))*((X3-mean(X3))/sd(X3))
+X4cor = sqrt(1/(length(X4)-1))*((X4-mean(X4))/sd(X4))
+
+Lmodel=lm(Ycor~-1+X1cor+X2cor+X3cor+X4cor)
+Lmodel
+
+Lmod#Y~X1+X2+X3+X4
+```
+
+7.b)
+
+The Standardization coef beta hat after transformation becomes :
+
+Betahat2=Sy/Sk*beta2hatstar
+
+
+```{r}
+Betahat2=(sd(Y)/sd(X2))*0.423#value of beta from Lmodel
+Betahat2
+```
+
+7.c)
+
+The Standardization coef beta hat after transformatio becomes :
+
+Betahatk=Sy/Sk*betakhatstar
+
+```{r}
+Betahat1=(sd(Y)/sd(X1))*-0.547
+Betahat2=(sd(Y)/sd(X2))*0.423
+Betahat3=(sd(Y)/sd(X3))*0.048
+Betahat4=(sd(Y)/sd(X4))*0.502
+
+Betahat1
+Betahat2
+Betahat3
+Betahat4
+```
+Problem 8
+
+8.a)
+
+The regression model is Y=50.775 + 4.425X1
+
+```{r}
+Y = Data3$Y
+X1= Data3$X1
+X2=Data3$X2
+
+Linearmod=lm(Y~X1)
+Linearmod
+
+```
+
+8.b)
+
+We have observed that the coefficient of moisture in model 6.5b is equal to that of the moisture coefficient in this model
+
+```{r}
+lm(Y~X1+X2)#model in 6.5b
+```
+
+8.c)
+
+From anova of the models
+SSR(X1|X2) = SSR(X1)
+
+```{r}
+anova(Linearmod)
+anova(lm(Y~X1+X2))
+#SSR X1/X2= = SSR(X1, X2) − SSR(X2)
+Ssrx1_x2=1566.45+306.25-306.25
+Ssrx1_x2
+```
+8.d)
+
+Based on (b) and (c), and also the correlation matrix in Problem 6.5(a) confirms that there is a strong
+linear relationship between response variable and moisture content X1.
+
+Problem 9
+
+9.a)
+
+By plotting the graph the relation did not appear the same for both the populations.
+
+```{r}
+Data9=read.table("AS39Data.txt", header = FALSE, sep = "") 
+Y = Data9$V1
+X1 = Data9$V2
+X2=Data9$V3
+
+library(ggplot2)
+ggplot(Data9, aes(X1, Y, colour = as.factor(X2))) + geom_point()
+
+plot(Y,X1+X2)
+```
+
+9.b)
+
+H0:All the coeficients are zero
+Ha : At least one of the coefficient is not zero
+
+since, Fstar > F-ratio i.e 18.65>3.15, therefore, we reject null hypothesis.
+
+```{r}
+fit = lm(Y~X1+X2+X1*X2)
+fit
+summary(fit)
+fit$coef
+anova(fit)
+
+fit = lm(Y~X1)
+anova(fit)
+
+
+fit1 = update(fit,.~.+X2+X1*X2)
+anova(fit1)
+nrow(Data)
+
+#From anova table
+
+#SSR(X_2, X_1X_2|X_1) = SSR(X_2, X_1X_2, X_1) - SSR(X_1)
+#=3670.9 + 453.1 + 113.0 - 3670.9
+
+SSR=3670.9 + 453.1 + 113.0 - 3670.9
+
+MSEf=909.1/60
+
+DofF=3
+DofP=1
+
+Fstar=(SSR/(DofF-DofP))/(909.1/60)
+Fstar
+
+qf(0.95,2,60)
+```
+
+9.c)
+
+The nature of difference between two models is linear
+that is Y=76.021+1.102X
+
+```{r}
+Y11=Y[X2==1]
+Y12=Y[X2==0]
+X11=X1[X2==1]
+X10=X1[X2==0]
+
+LinMod1=lm(Y11~X11)
+LinMod2=lm(Y12~X10)
+
+LinMod1
+#Y=-50.884+1.668X
+LinMod2
+#Y=-126.905+2.776X
+
+#Difference in the Model
+#Y=76.021+1.102X
+
+ggplot(Data9, aes(x=X1, y=Y, col=as.factor(X2))) + geom_point() +
+            geom_smooth(method="lm", se=FALSE)
+```
+
