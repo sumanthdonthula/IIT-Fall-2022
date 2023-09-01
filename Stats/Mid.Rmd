@@ -1,0 +1,219 @@
+---
+title: "Mid-Term Take Home"
+author: "Sumanth Donthula"
+date: "2022-10-19"
+output:pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Question 1)
+
+From the scattered plots we can see that the rental rates(Y) is modarately correlated with operating_expenses(X2) and square_footage(X4).Y is weakly related with age(X1) and vacancy rates(X3).
+
+```{r}
+Data=read.table("Commercial_Property.txt", header = TRUE, sep = "");
+Y=Data$Y;
+X1=Data$X1;
+X2=Data$X2;
+X3=Data$X3;
+X4=Data$X4;
+
+
+par(mfrow=c(3,2))
+pairs(Data) 
+
+
+```
+Question 2)
+
+The model is
+
+$Y=12.220-0.142*X1+0.238*X2+0.619*X3+0.000007*X4$
+
+or
+
+$Y=1.220e+01-1.420e-01*X1+2.820e-01*X2+6.193e-01*X3+7.924e-06*X4$
+
+```{r}
+Model1=lm(Y~X1+X2+X3+X4)
+Model1
+
+```
+Question 3)
+
+In the first plot i.e, residuals against individual predictors, the residuals appears to form a systematic patterns and i.i.d. with normal distribution.
+
+In the second plot i.e, residuals against two factor interaction the systematic pattern for residuals look like i.i.d. normally distributed in X2 x X4 and X1 x X2 interaction terms.
+
+```{r}
+plot(Y,Model1$residuals)
+abline(0,0)
+
+par(mfrow=c(3,2))
+
+plot(X1,Model1$residuals)
+abline(0,0)
+plot(X2,Model1$residuals)
+abline(0,0)
+plot(X3,Model1$residuals)
+abline(0,0)
+plot(X4,Model1$residuals)
+abline(0,0)
+
+
+par(mfrow=c(3,2))
+plot(X1*X2,Model1$residuals)
+abline(0,0)
+plot(X1*X3,Model1$residuals)
+abline(0,0)
+plot(X1*X4,Model1$residuals)
+abline(0,0)
+plot(X2*X3,Model1$residuals)
+abline(0,0)
+plot(X2*X4,Model1$residuals)
+abline(0,0)
+plot(X3*X4,Model1$residuals)
+abline(0,0)
+
+```
+Question 4)
+
+The F ratio is greater than F statistic for all coefficients, so we reject null hypothesis and conclude that none of the coeficients are 0.
+
+```{r}
+anova(Model1)
+
+Fs=qf(0.95,1,76)
+Fs
+
+
+```
+Question 5)
+
+R Square defines the variance of dependent variable that can be explained by independent variables.
+
+R-squared : 0.5847 #from summary of the model.
+
+Adjusted R-Squared
+Adjusted R-Square is similar to R-Squared but it will consider degrees of freedom of the data points also into account because the R-Squared varies a lot if new dependent variables are added.
+
+Adjusted R-squared : 0.5629 #from summary of the model.
+
+
+```{r}
+summary(Model1)
+```
+Question 6)
+
+The point estimates, 95 percent confidence and prediction intervals for the data points are as follows:
+
+```{r}
+Data1=data.frame(X1=4,X2=10,X3=0.1,X4=80000)
+Data2=data.frame(X1=6,X2=11.5,X3=0,X4=120000)
+Data3=data.frame(X1=12,X2=12.5,X3=0.32,X4=340000)
+
+
+ writeLines("Confidence Intervals")
+
+
+
+predict(Model1, newdata = Data1, interval = "confidence", level=0.95)
+predict(Model1, newdata = Data2, interval = "confidence", level=0.95)
+predict(Model1, newdata = Data3, interval = "confidence", level=0.95)
+
+
+writeLines("Prediction Intervals")
+
+predict(Model1, newdata = Data1, interval = "prediction", level=0.95)
+predict(Model1, newdata = Data2, interval = "prediction", level=0.95)
+predict(Model1, newdata = Data3, interval = "prediction", level=0.95)
+
+
+
+```
+Question 7)
+
+partial F test
+
+![Partial F Test](C:/Users/SRINU/Desktop/Fall 2022/Stats/Capture.png)
+
+follows $F(dfF - dfr,n-p)$ Distribution
+
+Conclusion: Since F Ratio is less than F statistic we don't reject null hypothesis so $Beta3=0$
+
+```{r}
+Model2=lm(Y~X1+X2+X4)
+Model2
+anova(Model1)
+anova(Model2)
+#From Anova Tables
+SSRF=98.231
+SSRR=98.650
+dfF=4
+dfr=3
+MSEf=1.293
+
+F=((SSRR - SSRF)/(dfF - dfr))/MSEf
+F
+
+qf(p=.95, dfF-dfr, nrow(Data)-5)
+
+```
+Question 8)
+
+From the plot we can observe that there is a curvy pattern as the value of Y is increasing wrt X1 till value 10 and it started decreasing after 10
+
+```{r}
+plot(X1,Y)
+
+```
+Question 9)
+
+The estimated regression function is $Y=12.49-0.4043*X1+0.314*X2+0.00000846*X4+0.0145*X1^2$
+
+Model3 is a good fit.
+
+```{r}
+XSq=X1^2
+Model3=lm(Y~X1+X2+X4+XSq)
+summary(Model3)
+
+plot(Y,fitted(Model3))
+
+```
+Question 10)
+
+partial F test
+
+![Partial F Test](C:/Users/SRINU/Desktop/Fall 2022/Stats/Capture.png)
+
+follows $F(dfF - dfr,n-p)$ Distribution
+
+Conclusion: Since F Ratio is greater than F statistic so we reject null hypothesis so $X1^2$ is a significant term
+
+
+```{r}
+
+anova(Model2)
+anova(Model3)
+
+#From Anova Tables
+SSRR=98.650#Reduced Model
+SSRF=91.535#Full Model
+dfF=4
+dfr=3
+MSEf=1.204
+
+#Partial test
+F=((SSRR - SSRF)/(dfF - dfr))/MSEf
+F
+
+qf(p=.95, dfF-dfr, nrow(Data)-5)
+
+```
+
+
+
